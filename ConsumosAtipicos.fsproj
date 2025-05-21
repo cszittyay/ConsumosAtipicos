@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Caso01.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.Data" Version="6.6.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.0-preview1.25120.4" />
+    <PackageReference Include="Plotly.NET" Version="5.1.0" />
+    <PackageReference Include="SQLProvider" Version="1.5.7" />
+  </ItemGroup>
+
+</Project>
