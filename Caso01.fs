@@ -27,8 +27,8 @@ let path = __SOURCE_DIRECTORY__ + @"\ConsumosAtipicos01.csv"
 
 type CSV = CsvProvider<path, Separators=";", Culture="es-AR",  HasHeaders=true>
 
-let cargarDatos x =
-    CSV.Load(path).Rows
+let cargarDatos (pathX:string) =
+    CSV.Load(pathX).Rows
     |> Seq.map (fun row -> {diaGas=row.``DiaGas``; consumo=float row.GJ})
     |> Seq.toList
 
@@ -132,13 +132,20 @@ let windowSize = 7 // Tamaño de la ventana (en días)
 let umbral = 30.0 // Umbral de cambio (en GJ)
 
 
-let magnitudCambio (valor:float) (min:float) (max:float)  = 
-    if valor > max * 1.2 then (valor - max) / max * 100.0
-    elif valor < min * 0.8 && min > 0 then (valor - min) / min * 100.0
+let magnitudCambio (valor:float) (min:float) (max:float) tolerancia =
+    if valor > max * (1.0 + tolerancia ) then (valor - max) / max * 100.0
+    elif valor < min * (1.0 - tolerancia) && min > 0 then (valor - min) / min * 100.0
     else 0.
 
 
-let getVenanta  (datos: consumoDiario list) windowSize  =
+let magnitudCambioGJ (valor:float) (min:float) (max:float)  = 
+    if valor > max then valor - max
+    else  valor - min
+
+let filtro consumo min max tolerancia =  consumo > max * (1.0 + tolerancia) || consumo < min * (1.0 - tolerancia) 
+    
+let getVentana  (datos: consumoDiario list) windowSize tolerancia retraso =
+    let toleranciaPorc = tolerancia / 100.0
     let win =  datos |> List.windowed(windowSize) 
                    |> List.map(fun x -> 
                         {desde = x[0].diaGas;
@@ -147,11 +154,32 @@ let getVenanta  (datos: consumoDiario list) windowSize  =
                          max = x |> List.map(fun z -> z.consumo) |> List.max;
                          avg = x |> List.averageBy(fun z -> z.consumo);
                          })
-                   |> List.take (List.length datos - windowSize)
-    let nuevaData = datos |> List.skip (windowSize) 
+                   |> List.take (List.length datos - windowSize - retraso )
+    let nuevaData = datos |> List.skip (windowSize + retraso)
 
     let cambios = win |> List.zip nuevaData 
-                      |> List.filter(fun (x, y) -> x.consumo > y.max * 1.2 || x.consumo < y.min * 0.8 )
+                      |> List.filter(fun (x, y) -> filtro x.consumo y.min y.max toleranciaPorc)
                       // Determinar la magnitud del cambio
-                      |> List.map(fun (x, y) -> x.diaGas, x.consumo, magnitudCambio x.consumo y.min y.max)
+                      |> List.map(fun (x, y) -> x.diaGas, x.consumo, magnitudCambio x.consumo y.min y.max toleranciaPorc)
+    cambios |> List.iter(fun (dia, consumo, mag) -> (printfn "%s" $"{dia}\t{consumo:F2}\t{mag:F2}"))
+
+
+
+
+let getVentanaGJ  (datos: consumoDiario list) windowSize toleranciaGJ retraso =
+    let win =  datos |> List.windowed(windowSize) 
+                   |> List.map(fun x -> 
+                        {desde = x[0].diaGas;
+                         hasta = x[windowSize-1].diaGas; 
+                         min = x |> List.map(fun z -> z.consumo) |> List.min;
+                         max = x |> List.map(fun z -> z.consumo) |> List.max;
+                         avg = x |> List.averageBy(fun z -> z.consumo);
+                         })
+                   |> List.take (List.length datos - windowSize - retraso )
+    let nuevaData = datos |> List.skip (windowSize + retraso)
+
+    let cambios = win |> List.zip nuevaData 
+                      |> List.filter(fun (x, y) -> x.consumo > y.max + toleranciaGJ || x.consumo < y.min - toleranciaGJ)
+                      // Determinar la magnitud del cambio
+                      |> List.map(fun (x, y) -> x.diaGas, x.consumo, magnitudCambioGJ x.consumo y.min y.max)
     cambios |> List.iter(fun (dia, consumo, mag) -> (printfn "%s" $"{dia}\t{consumo:F2}\t{mag:F2}"))

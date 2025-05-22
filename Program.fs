@@ -14,12 +14,30 @@ printfn "Hello from F#"
 
 // CSUM
 
-let datos = cargarDatos "ConsumosAtipicos01.csv"
-//let avg = 40.0
-//let umbral = 20.0
-//let cambios = detectarCambiosCUSUM datos avg umbral
-//graficarCUSUM datos cambios
 
-getVenanta datos 7 |> ignore
+[<EntryPoint>]
+let main argv =
+    let pathBase = @"C:\Users\cszit\source\repos\f#\MX\ConsumosAtipicos\ConsumosAtipicos\"
+    let pathArchivo =  pathBase + @"ConsumosAtipicos02.csv"
+    let datos = cargarDatos pathArchivo
+    //let avg = 40.0
+    //let umbral = 20.0
+    //let cambios = detectarCambiosCUSUM datos avg umbral
+    //graficarCUSUM datos cambios
 
-// 
+    // analisis de los argumentos de entrada
+    printfn $"Archivo: {pathArchivo}"
+
+    let modo = argv.[0]
+    let ventana = argv.[1] |> int
+    let umbral = argv.[2] |> float
+    let retraso = argv.[3] |> int
+
+
+    printfn $"Modo:{modo}\tVentana:{ventana}\tUmbral:{umbral}\tRetraso:{retraso}"
+
+    match modo with
+    | "G" -> getVentanaGJ datos ventana umbral retraso 
+    | "P" -> getVentana datos ventana umbral retraso 
+    
+    0
