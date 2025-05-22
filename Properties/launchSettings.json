@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ConsumosAtipicos": {
+      "commandName": "Project",
+      "commandLineArgs": "G s02 10 30 2"
+    }
+  }
+}

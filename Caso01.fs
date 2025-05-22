@@ -1,13 +1,20 @@
 ﻿module Caso01
 
 open System
+open System.Numerics
+open System.Globalization
 open FSharp.Data
 open Plotly.NET
+open Plotly.NET.TraceObjects
+open MathNet.Numerics
+open MathNet.Numerics.IntegralTransforms
+
 
 type consumoDiario = {
     diaGas: DateTime
     consumo: float
 }
+
 
 
 type ventana = {
@@ -161,7 +168,7 @@ let getVentana  (datos: consumoDiario list) windowSize tolerancia retraso =
                       |> List.filter(fun (x, y) -> filtro x.consumo y.min y.max toleranciaPorc)
                       // Determinar la magnitud del cambio
                       |> List.map(fun (x, y) -> x.diaGas, x.consumo, magnitudCambio x.consumo y.min y.max toleranciaPorc)
-    cambios |> List.iter(fun (dia, consumo, mag) -> (printfn "%s" $"{dia}\t{consumo:F2}\t{mag:F2}"))
+    cambios 
 
 
 
@@ -182,4 +189,47 @@ let getVentanaGJ  (datos: consumoDiario list) windowSize toleranciaGJ retraso =
                       |> List.filter(fun (x, y) -> x.consumo > y.max + toleranciaGJ || x.consumo < y.min - toleranciaGJ)
                       // Determinar la magnitud del cambio
                       |> List.map(fun (x, y) -> x.diaGas, x.consumo, magnitudCambioGJ x.consumo y.min y.max)
-    cambios |> List.iter(fun (dia, consumo, mag) -> (printfn "%s" $"{dia}\t{consumo:F2}\t{mag:F2}"))
+    cambios 
+
+
+// Detectar patrón de consumo semanal
+
+let detectarFrecuencias (serie: float[]) =
+    let cbuffer = serie |> Array.map(fun x -> Complex(x, 0.0))
+    Fourier.Forward(cbuffer, FourierOptions.Default)
+    cbuffer |> Array.map(fun x -> x.Magnitude) |> Array.toList |> List.skip 1 |> List.take 80 |> List.map(fun x -> x / 1000.0) |> List.iteri(fun i x -> printfn "%d\t%f" i x)
+
+
+/// Calcula la autocorrelación de una serie con un lag específico
+let autocorrelacion (serie: float list) (lag: int) =
+    let n = serie.Length - lag
+    let baseSerie = serie |> List.take n
+    let lagSerie = serie |> List.skip lag |> List.take n
+    let media xs = List.average xs
+    let desv xs =
+        let m = media xs
+        sqrt (List.averageBy (fun x -> (x - m) ** 2.0) xs)
+    let covarianza =
+        List.zip baseSerie lagSerie
+        |> List.averageBy (fun (x, y) -> (x - media baseSerie) * (y - media lagSerie))
+    covarianza / (desv baseSerie * desv lagSerie)
+
+
+
+let graficar (datos:consumoDiario list) (fechasCambios: DateTime list) =
+    let fechas, consumos = datos |> List.map(fun x -> x.diaGas, x.consumo) |> List.unzip 
+    
+    let avgConsumos = consumos |> List.average
+
+    let serie = 
+        Chart.Line(fechas, consumos, Name="Consumo Diario", LineWidth=1.0)
+
+    let puntosCambio =
+        Chart.Point(fechasCambios, List.replicate fechasCambios.Length avgConsumos, Name="Cambio Detectado")
+        |> Chart.withMarker (Marker.init(Size=2, Color= Color.fromKeyword Red))
+
+    Chart.combine [serie; puntosCambio]
+    |> Chart.withTitle "Consumo de Gas y Detección de Cambios"
+    |> Chart.withXAxisStyle("Fecha")
+    |> Chart.withYAxisStyle("Consumo [GJ]")
+    |> Chart.show
