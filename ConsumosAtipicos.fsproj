@@ -6,6 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Autocorrelacion.fs" />
+    <Compile Include="AnalisisFrecuencial.fs" />
     <Compile Include="Caso01.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
