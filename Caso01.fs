@@ -3,45 +3,11 @@
 open System
 open System.Numerics
 open System.Globalization
-open FSharp.Data
-open Plotly.NET
-open Plotly.NET.TraceObjects
 
 
-type consumoDiario = {
-    diaGas: DateTime
-    consumo: float
-}
+open DataUtils
 
 
-
-type ventana = {
-    desde: DateTime
-    hasta: DateTime
-    min: float
-    max: float
-    avg: float
-}
-
-type result = {
-    diaGas: DateTime
-    consumo: float
-    limite: float
-}
-
-
-// === PARTE 1: Cargar CSV ===
-
-// Definición del tipo CSV para cargar el archivo
-[<Literal>]
-let path = __SOURCE_DIRECTORY__ + @"\ConsumosAtipicos01.csv"
-
-type CSV = CsvProvider<path, Separators=";", Culture="es-AR",  HasHeaders=true>
-
-let cargarDatos (pathX:string) =
-    CSV.Load(pathX).Rows
-    |> Seq.map (fun row -> {diaGas=row.``DiaGas``; consumo=float row.GJ})
-    |> Seq.toList
 
 // === PARTE 2: Detección de Cambios ===
 
@@ -74,6 +40,8 @@ let magnitudCambioGJ (valor:float) (min:float) (max:float)  =
     if valor > max then valor - max
     else  valor - min
 
+//  Compara el consumo con el minimo y el máximo de la ventana, 
+// wy devuelve true si el consumo está fuera de los límites permitidos por la tolerancia
 let filtro consumo min max tolerancia =  consumo > max * (1.0 + tolerancia) || consumo < min * (1.0 - tolerancia) 
 
 let getVentanaBase  (datos: consumoDiario list) windowSize retraso =
@@ -89,48 +57,37 @@ let getVentanaBase  (datos: consumoDiario list) windowSize retraso =
     win
 
 
-let getVentanaBase2  (datos: consumoDiario list) windowSize retraso =
-    let win =  datos |> List.windowed(windowSize) 
-                   |> List.map(fun x -> 
-                        let win2 = x |> List.take (windowSize - 1)
-                        let consumoUD = x.[windowSize-1].consumo
-                        let ajusteConsumo c1 c2 = c1 + (c2 - c1) / 4.0
 
-                        let win3 =
-                            {desde = x[0].diaGas;
-                             hasta = x[windowSize-1].diaGas; 
-                             min = win2 |> List.map(fun z -> z.consumo) |> List.min;
-                             max = win2 |> List.map(fun z -> z.consumo) |> List.max;
-                             avg = x |> List.averageBy(fun z -> z.consumo);
-                             }
-                        // ajustar el consumo de la ventana para que no se vea afectado por el nuevo consumo
-                        if win3.max < consumoUD then {win3 with max = ajusteConsumo win3.max consumoUD} 
-                        elif win3.min > consumoUD then {win3 with min = ajusteConsumo consumoUD win3.min } 
-                        else win3)
-
-                   |> List.take (List.length datos - windowSize - retraso )
-    win
-      
 
       
 let getVentana  (datos: consumoDiario list) windowSize tolerancia retraso =
     let toleranciaPorc = tolerancia / 100.0
-    let win =  getVentanaBase2 datos windowSize retraso
+    let win =  getVentanaBase datos windowSize retraso
+
+    let inicial = List.init (windowSize + retraso) (fun x -> win[0].avg)
+    let winMin = win |> List.map(fun x -> x.min * (1.- toleranciaPorc)) |> List.append inicial
+    let winMax = win |> List.map(fun x -> x.max * (1.+ toleranciaPorc)) |> List.append inicial
 
     let nuevaData = datos |> List.skip (windowSize + retraso)
-
+    
     let cambios = win |> List.zip nuevaData 
                       |> List.filter(fun (x, y) -> filtro x.consumo y.min y.max toleranciaPorc)
                       // Determinar la magnitud del cambio
                       |> List.map(fun (x, y) -> 
                             let lim = if x.consumo > y.max * (1.+ toleranciaPorc) then y.max else y.min
                             {diaGas = x.diaGas; consumo = x.consumo; limite = lim})
-    cambios
+    cambios, winMin, winMax
 
 
 let getVentanaGJ  (datos: consumoDiario list) windowSize toleranciaGJ retraso =
     
-    let win =  getVentanaBase2 datos windowSize retraso
+    let win =  getVentanaBase datos windowSize retraso
+    
+    let inicial = List.init (windowSize-1) (fun x -> win[0].avg)
+    let winMin = win |> List.map(fun x -> Math.Max( 0.0 ,x.min - toleranciaGJ)) |> List.append inicial
+    let winMax = win |> List.map(fun x -> x.max * + toleranciaGJ) |> List.append inicial
+    // Completar con el ancho de la ventana
+    
     let nuevaData = datos |> List.skip (windowSize + retraso)
 
     let cambios = win |> List.zip nuevaData 
@@ -139,25 +96,6 @@ let getVentanaGJ  (datos: consumoDiario list) windowSize toleranciaGJ retraso =
                       |> List.map(fun (x, y) -> 
                             let lim = if x.consumo > y.max+toleranciaGJ then y.max else y.min
                             {diaGas = x.diaGas; consumo = x.consumo; limite = lim})
-    cambios
+    cambios, winMin, winMax
 
 
-let graficar (datos:consumoDiario list) (cambios: result list) (titulo:string) =
-    let fechas, consumos = datos |> List.map(fun x -> x.diaGas, x.consumo) |> List.unzip 
-    
-    let avgConsumos = consumos |> List.average
-
-    let fechasCambios, limites = cambios |> List.map(fun x -> x.diaGas, x.limite) |> List.unzip
-    let serie = 
-        Chart.Line(fechas, consumos, Name="Consumo Diario", LineWidth=1.0)
-
-    let puntosCambio =
-        Chart.Point(fechasCambios, limites, Name="Cambio Detectado")
-        |> Chart.withMarker (Marker.init(Size=2, Color= Color.fromKeyword Red))
-
-
-    Chart.combine [serie; puntosCambio]
-    |> Chart.withTitle (titulo, TitleFont = Font.init(Size=10))
-    |> Chart.withXAxisStyle("Fecha")
-    |> Chart.withYAxisStyle("Consumo [GJ]")
-    |> Chart.show

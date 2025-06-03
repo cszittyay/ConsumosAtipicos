@@ -1,8 +1,12 @@
 ﻿open System
 open Plotly.NET
 open Caso01
+open Pareto
+open DataUtils
 open Autocorrelacion
 open AnalisisFrecuencial
+open zscore
+
 
 
 let pathBase = @"C:\Users\cszit\source\repos\f#\MX\ConsumosAtipicos\ConsumosAtipicos\"
@@ -45,7 +49,20 @@ let main argv =
     let umbral = argv.[3] |> float
     let retraso = argv.[4] |> int
 
+    // PARETO
 
+    //let datos = cargarDatos pathArchivo
+    //let pareto = getPareto2 datos 0.1
+    //cambiosPareto datos (fst pareto) (snd pareto)
+    //printfn "%A" pareto
+
+
+    // zona de atipicos 
+    //let zscore = detectarAtipicosZS datos 21 2
+
+    //zscore |> Seq.iter (printfn "%A")
+
+    // graficarZScore datos "Detección de Atípicos con Z-Score"
 
     let pathBase = @"C:\Users\cszit\source\repos\f#\MX\ConsumosAtipicos\ConsumosAtipicos\"
     let archivo =  $"ConsumosAtipico{archivo}"
@@ -59,12 +76,11 @@ let main argv =
 
 //    printfn $"Modo:{modo}\tArchivo:{archivo}\tVentana:{ventana}\tUmbral:{umbral}\tRetraso:{retraso}"
 
-    let cambios = match modo with
-                        | "G" -> getVentanaGJ datos ventana umbral retraso 
-                        | "P" -> getVentana datos ventana umbral retraso 
-                        | _ ->   failwith "Modo de operación no reconocido"
-                  |> Seq.toList
-
-    graficar datos cambios titulo
+    let cambios,winMin, winMax = match modo with
+                                    | "G" -> getVentanaGJ datos ventana umbral retraso 
+                                    | "P" -> getVentana datos ventana umbral retraso 
+                                    | _ ->   failwith "Modo de operación no reconocido"
+                  
+    graficarWin datos cambios winMin winMax titulo
     
     0
