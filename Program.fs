@@ -6,6 +6,9 @@ open DataUtils
 open Autocorrelacion
 open AnalisisFrecuencial
 open zscore
+open MACD
+open CumSum1
+
 
 
 
@@ -74,7 +77,33 @@ let main argv =
     let datos = cargarDatos pathArchivo
     
 
-//    printfn $"Modo:{modo}\tArchivo:{archivo}\tVentana:{ventana}\tUmbral:{umbral}\tRetraso:{retraso}"
+
+//    let consumoDiario = datos |> List.map (fun x -> x.consumo)
+//    let macd, signal = calcularMACD consumoDiario
+
+//// Detectar cruces
+//    let cruces =
+//        List.zip3 macd.Tail macd.Tail signal.Tail
+//        |> List.filter (fun (prevMacd, currMacd, sigx) ->
+//            (prevMacd < sigx && currMacd > sigx) || (prevMacd > sigx && currMacd < sigx))
+
+//    cruces |> List.iter (printfn "%A")
+
+
+
+//  CumSum
+    //let k = 30.0
+    //let h = 3.0
+
+    //let consumoAVG = datos |> List.take 200 |> List.averageBy(fun x -> x.consumo)
+    //let cumsum = detectarCUSUM datos consumoAVG k h
+    //let result = cumsum |> List.map (fun x -> { diaGas = x.diaGas; consumo = x.consumo; limite = x.consumo })
+    //graficarCSUM datos result "uso de CUSUM"
+
+// Fin CUSUM
+
+
+    printfn $"Modo:{modo}\tArchivo:{archivo}\tVentana:{ventana}\tUmbral:{umbral}\tRetraso:{retraso}"
 
     let cambios,winMin, winMax = match modo with
                                     | "G" -> getVentanaGJ datos ventana umbral retraso 

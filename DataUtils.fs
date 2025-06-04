@@ -77,20 +77,29 @@ let graficarWin (datos:consumoDiario list) (cambios: result list) (winMin: float
     let avgConsumos = consumos |> List.average
 
     let fechasCambios, limites = cambios |> List.map(fun x -> x.diaGas, x.consumo) |> List.unzip
-    let serie = Chart.Line(fechas, consumos, Name="Consumo Diario", LineWidth=0.5)
+
+    let layout =
+        let tmp = Layout()
+        tmp?width <- 1800
+        tmp?height <- 980    
+        tmp
+
+    let serie = Chart.Line(fechas, consumos, Name="Consumo Diario", LineWidth=0.5) 
 
     let winMinSerie = Chart.Line(fechas, winMin, Name="Mínimo", LineWidth=0.5)
     
-    let winMaxSerie = Chart.Line(fechas, winMax, Name="Máximo", LineWidth=0.5)
-
+    let winMaxSerie = Chart.Line(fechas, winMax, Name="Máximo", LineWidth=0.5) |> 
+                      Chart.withLineStyle (Color=Color.fromKeyword Black)
 
     let puntosCambio =
         Chart.Point(fechasCambios, limites, Name="Cambio Detectado")
-        |> Chart.withMarker (Marker.init(Size=2, Color= Color.fromKeyword Red))
-
+        |> Chart.withMarker (Marker.init(Size=3, Color= Color.fromKeyword Red))
+        
+    
 
     Chart.combine [serie; puntosCambio; winMinSerie; winMaxSerie]
-    |> Chart.withTitle (titulo, TitleFont = Font.init(Size=10))
+    |> Chart.withTitle (titulo, TitleFont = Font.init(Size=14))
     |> Chart.withXAxisStyle("Fecha")
     |> Chart.withYAxisStyle("Consumo [GJ]")
+    |> Chart.withLayout(layout)
     |> Chart.show
