@@ -19,6 +19,7 @@ type ventana = {
     min: float
     max: float
     avg: float
+    stdev: float
 }
 
 type result = {
@@ -75,7 +76,7 @@ let graficarWin (datos:consumoDiario list) (cambios: result list) (winMin: float
     
     let avgConsumos = consumos |> List.average
 
-    let fechasCambios, limites = cambios |> List.map(fun x -> x.diaGas, x.limite) |> List.unzip
+    let fechasCambios, limites = cambios |> List.map(fun x -> x.diaGas, x.consumo) |> List.unzip
     let serie = Chart.Line(fechas, consumos, Name="Consumo Diario", LineWidth=0.5)
 
     let winMinSerie = Chart.Line(fechas, winMin, Name="Mínimo", LineWidth=0.5)

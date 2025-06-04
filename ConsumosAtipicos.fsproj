@@ -8,6 +8,7 @@
   <ItemGroup>
     <Compile Include="DataUtils.fs" />
     <Compile Include="Autocorrelacion.fs" />
+    <Compile Include="MACD.fs" />
     <Compile Include="zscore.fs" />
     <Compile Include="AnalisisFrecuencial.fs" />
     <Compile Include="Pareto.fs" />

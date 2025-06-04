@@ -40,9 +40,16 @@ let magnitudCambioGJ (valor:float) (min:float) (max:float)  =
     if valor > max then valor - max
     else  valor - min
 
+
+let max0 x = if x < 0.0 then 0.0 else x
+
 //  Compara el consumo con el minimo y el máximo de la ventana, 
 // wy devuelve true si el consumo está fuera de los límites permitidos por la tolerancia
 let filtro consumo min max tolerancia =  consumo > max * (1.0 + tolerancia) || consumo < min * (1.0 - tolerancia) 
+
+
+let filtroGauss  (win:ventana) =  win.avg - 2.0 * win.stdev, win.avg + 2.0 * win.stdev 
+
 
 let getVentanaBase  (datos: consumoDiario list) windowSize retraso =
     let win =  datos |> List.windowed(windowSize) 
@@ -52,11 +59,16 @@ let getVentanaBase  (datos: consumoDiario list) windowSize retraso =
                          min = x |> List.map(fun z -> z.consumo) |> List.min;
                          max = x |> List.map(fun z -> z.consumo) |> List.max;
                          avg = x |> List.averageBy(fun z -> z.consumo);
+                         stdev = 
+                            let avg = x |> List.averageBy(fun z -> z.consumo)
+                            let varianza = x |> List.averageBy(fun z -> pown (z.consumo - avg) 2)
+                            sqrt varianza   
                          })
                    |> List.take (List.length datos - windowSize - retraso )
     win
 
-
+// Completar
+let maxZ x = Math.Max(0.0, x)
 
 
       
@@ -65,13 +77,14 @@ let getVentana  (datos: consumoDiario list) windowSize tolerancia retraso =
     let win =  getVentanaBase datos windowSize retraso
 
     let inicial = List.init (windowSize + retraso) (fun x -> win[0].avg)
-    let winMin = win |> List.map(fun x -> x.min * (1.- toleranciaPorc)) |> List.append inicial
-    let winMax = win |> List.map(fun x -> x.max * (1.+ toleranciaPorc)) |> List.append inicial
+    let winMin = win |> List.map(fun x -> filtroGauss x |> fst |> max0) |> List.append inicial
+    let winMax = win |> List.map(fun x -> filtroGauss x |> snd ) |> List.append inicial
 
     let nuevaData = datos |> List.skip (windowSize + retraso)
     
     let cambios = win |> List.zip nuevaData 
-                      |> List.filter(fun (x, y) -> filtro x.consumo y.min y.max toleranciaPorc)
+                      |> List.filter(fun (x, y) -> let xmin, xmax = filtroGauss y
+                                                   x.consumo > xmax || x.consumo < xmin)
                       // Determinar la magnitud del cambio
                       |> List.map(fun (x, y) -> 
                             let lim = if x.consumo > y.max * (1.+ toleranciaPorc) then y.max else y.min
