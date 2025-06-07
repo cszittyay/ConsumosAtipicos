@@ -8,7 +8,7 @@ open AnalisisFrecuencial
 open zscore
 open MACD
 open CumSum1
-
+open ChatGPT_01
 
 
 
@@ -23,7 +23,6 @@ let pathArchivo =  pathBase + archivo + ".csv" // @"ConsumosAtipicos02.csv"
 // datos |> List.map(fun x -> x.consumo) |> autocorrelacionMovil 7 |> List.map(fun x -> x * 100.0) |> List.iter (printfn "%f")
 
 
-// datos |> List.map(fun x -> x.consumo) |> List.toArray |> detectarFrecuencias
 
 
 
@@ -72,10 +71,11 @@ let main argv =
     let pathArchivo =  pathBase + archivo + ".csv" // @"ConsumosAtipicos02.csv"
      
     let sufijoUMbral = if modo = "G" then "GJ" else "%"
-    let titulo = $"Modo: {modo}\tArchivo: {archivo}\tVentana: {ventana}días,\tUmbral: {umbral}{sufijoUMbral},\tRetraso: {retraso}días"
+    let titulo = $"Archivo: {archivo}\tVentana: {ventana}días,\tUmbral: {umbral}{sufijoUMbral},\tRetraso: {retraso}días"
     printfn "%s" titulo
     let datos = cargarDatos pathArchivo
     
+
 
 
 //    let consumoDiario = datos |> List.map (fun x -> x.consumo)
@@ -103,13 +103,18 @@ let main argv =
 // Fin CUSUM
 
 
-    printfn $"Modo:{modo}\tArchivo:{archivo}\tVentana:{ventana}\tUmbral:{umbral}\tRetraso:{retraso}"
+    //printfn $"Archivo:{archivo}\tVentana:{ventana}\tUmbral:{umbral}\tRetraso:{retraso}"
 
-    let cambios,winMin, winMax = match modo with
-                                    | "G" -> getVentanaGJ datos ventana umbral retraso 
-                                    | "P" -> getVentana datos ventana umbral retraso 
-                                    | _ ->   failwith "Modo de operación no reconocido"
+    //let cambios,winMin, winMax = match modo with
+    //                                | "G" -> getVentanaGJ datos ventana umbral retraso 
+    //                                | "P" -> getVentana datos ventana umbral retraso 
+    //                                | _ ->   failwith "Modo de operación no reconocido"
                   
-    graficarWin datos cambios winMin winMax titulo
+    //graficarWin datos cambios winMin winMax titulo
     
+    // datos |> List.map(fun x -> x.consumo) |> List.toArray |> detectarFrecuencias
+
+    let result, winMin, winMax = detectarOutliers datos ventana umbral 
+
+    graficarWin datos result winMin winMax titulo
     0

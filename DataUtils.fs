@@ -50,6 +50,9 @@ let cargarDatos (pathX:string) =
     |> Seq.toList
 
 
+let zip4 a b c d =
+    List.zip a (List.zip3 b c d)
+    |> List.map (fun (x, (y, z, w)) -> (x, y, z, w))
 
 let graficar (datos:consumoDiario list) (cambios: result list) (titulo:string) =
     let fechas, consumos = datos |> List.map(fun x -> x.diaGas, x.consumo) |> List.unzip 
@@ -60,7 +63,7 @@ let graficar (datos:consumoDiario list) (cambios: result list) (titulo:string) =
     let serie = Chart.Line(fechas, consumos, Name="Consumo Diario", LineWidth=0.5)
 
     let puntosCambio =
-        Chart.Point(fechasCambios, limites, Name="Cambio Detectado")
+        Chart.Point(fechasCambios, limites, Name="Consumo Atípico")
         |> Chart.withMarker (Marker.init(Size=2, Color= Color.fromKeyword Red))
 
 
@@ -92,7 +95,7 @@ let graficarWin (datos:consumoDiario list) (cambios: result list) (winMin: float
                       Chart.withLineStyle (Color=Color.fromKeyword Black)
 
     let puntosCambio =
-        Chart.Point(fechasCambios, limites, Name="Cambio Detectado")
+        Chart.Point(fechasCambios, limites, Name="Consumo Atípico")
         |> Chart.withMarker (Marker.init(Size=3, Color= Color.fromKeyword Red))
         
     

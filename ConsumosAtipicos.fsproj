@@ -9,6 +9,7 @@
     <Compile Include="DataUtils.fs" />
     <Compile Include="Autocorrelacion.fs" />
     <Compile Include="CumSum1.fs" />
+    <Compile Include="ChatGPT_01.fs" />
     <Compile Include="MACD.fs" />
     <Compile Include="zscore.fs" />
     <Compile Include="AnalisisFrecuencial.fs" />

@@ -49,9 +49,9 @@ let filtro consumo min max tolerancia =  consumo > max * (1.0 + tolerancia) || c
 
 
 let filtroGauss  (win:ventana) tolerancia =  
-        let delta =  (tolerancia * win.stdev) ** 0.7
+        // El delta es el 70% de la desviación estandard
+        let delta =  (tolerancia * win.stdev) ** 0.6
         win.avg - delta, win.avg + delta
-
 
 let getVentanaBase  (datos: consumoDiario list) windowSize retraso =
     let win =  datos |> List.windowed(windowSize) 
