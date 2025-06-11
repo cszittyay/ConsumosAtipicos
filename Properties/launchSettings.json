@@ -2,7 +2,7 @@
   "profiles": {
     "ConsumosAtipicos": {
       "commandName": "Project",
-      "commandLineArgs": "P s01 30 30 7"
+      "commandLineArgs": "s01 30 30 7"
     }
   }
 }

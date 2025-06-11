@@ -20,7 +20,6 @@ let calcularBandas (media: float list) (tolerancia: float) : (float list * float
 
 /// Detecta valores atípicos por fuera de bandas
 let detectarAtipicos (datos: consumoDiario list) (media: float list) (sup: float list) (inf: float list) =
-    // let datosValidos = List.skip (media |> List.takeWhile Double.IsNaN |> List.length) datos
     zip4 datos media sup inf
     |> List.choose (fun (d, m, s, i) ->
         if d.consumo > s || d.consumo < i then Some(d) else None)

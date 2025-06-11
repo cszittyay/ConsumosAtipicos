@@ -45,11 +45,10 @@ let main argv =
 
     // analisis de los argumentos de entrada
     
-    let modo = argv.[0]
-    let archivo = argv.[1]      // "s##"
-    let ventana = argv.[2] |> int
-    let umbral = argv.[3] |> float
-    let retraso = argv.[4] |> int
+    let archivo = argv.[0]      // "s##"
+    let ventana = argv.[1] |> int
+    let umbral = argv.[2]|> float
+    let retraso = argv.[3] |> int
 
     // PARETO
 
@@ -70,51 +69,17 @@ let main argv =
     let archivo =  $"ConsumosAtipico{archivo}"
     let pathArchivo =  pathBase + archivo + ".csv" // @"ConsumosAtipicos02.csv"
      
-    let sufijoUMbral = if modo = "G" then "GJ" else "%"
-    let titulo = $"Archivo: {archivo}\tVentana: {ventana}días,\tUmbral: {umbral}{sufijoUMbral},\tRetraso: {retraso}días"
+    let titulo = $"Archivo: {archivo}\tVentana: {ventana}días,\tUmbral: {umbral},\tRetraso: {retraso}días"
     printfn "%s" titulo
     let datos = cargarDatos pathArchivo
     
 
+    printfn $"Archivo:{archivo}\tVentana:{ventana}\tUmbral:{umbral}\tRetraso:{retraso}"
 
-
-//    let consumoDiario = datos |> List.map (fun x -> x.consumo)
-//    let macd, signal = calcularMACD consumoDiario
-
-//// Detectar cruces
-//    let cruces =
-//        List.zip3 macd.Tail macd.Tail signal.Tail
-//        |> List.filter (fun (prevMacd, currMacd, sigx) ->
-//            (prevMacd < sigx && currMacd > sigx) || (prevMacd > sigx && currMacd < sigx))
-
-//    cruces |> List.iter (printfn "%A")
-
-
-
-//  CumSum
-    //let k = 30.0
-    //let h = 3.0
-
-    //let consumoAVG = datos |> List.take 200 |> List.averageBy(fun x -> x.consumo)
-    //let cumsum = detectarCUSUM datos consumoAVG k h
-    //let result = cumsum |> List.map (fun x -> { diaGas = x.diaGas; consumo = x.consumo; limite = x.consumo })
-    //graficarCSUM datos result "uso de CUSUM"
-
-// Fin CUSUM
-
-
-    //printfn $"Archivo:{archivo}\tVentana:{ventana}\tUmbral:{umbral}\tRetraso:{retraso}"
-
-    //let cambios,winMin, winMax = match modo with
-    //                                | "G" -> getVentanaGJ datos ventana umbral retraso 
-    //                                | "P" -> getVentana datos ventana umbral retraso 
-    //                                | _ ->   failwith "Modo de operación no reconocido"
+    let cambios,winMin, winMax = getVentana datos ventana umbral retraso 
                   
-    //graficarWin datos cambios winMin winMax titulo
+    graficarWin datos cambios winMin winMax titulo
     
-    // datos |> List.map(fun x -> x.consumo) |> List.toArray |> detectarFrecuencias
+    
 
-    let result, winMin, winMax = detectarOutliers datos ventana umbral 
-
-    graficarWin datos result winMin winMax titulo
     0
